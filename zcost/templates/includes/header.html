@@ -1,0 +1,13 @@
+<nav class="navbar navbar-light">
+  <div class="container-fluid mt-5 bg-info bg-gradient fs-3 text-white">
+    <div class="col-8">
+      <span>{{ title_app }}</span>
+    </div>
+    <div class="col-4">
+      <span class="fs-3">Привет, {{ user.name }} {{ user.lastname }}</span>
+      {% if user.photo %}
+        <img src="{{ user.photo }}" class="rounded-circle ms-3" alt="user photo" width="30" height="30">
+      {% endif %}
+    </div>
+  </div>
+</nav>
