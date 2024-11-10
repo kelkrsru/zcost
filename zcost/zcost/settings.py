@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'users',
     'core',
     'settings',
-    # 'dealcard',
+    'task',
 ]
 
 MIDDLEWARE = [
