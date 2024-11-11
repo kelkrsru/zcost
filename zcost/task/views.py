@@ -59,7 +59,7 @@ def index(request):
         logger.info(f'{SEPARATOR}')
         context['error'] = 'Задача не привязана к сделке'
         return render(request, template, context)
-    if settings_portal.cost_in_task_code not in task.properties:
+    if snake2camel(settings_portal.cost_in_task_code) not in task.properties:
         # Код поля Себестоимость в задачах указан неверно или не существует
         logger.info(f'{NEW_STR}Код поля "Себестоимость в задачах" указан неверно или не существует. '
                     f'{settings_portal.cost_in_task_code=}.')
@@ -76,3 +76,9 @@ def index(request):
         return render(request, template, context)
 
     return render(request, template, context)
+
+
+def snake2camel(snake_str):
+    """Метод преобразования названия поля из snake case в camel case."""
+    first, *others = snake_str.split('_')
+    return ''.join([first.lower(), *map(str.title, others)])
