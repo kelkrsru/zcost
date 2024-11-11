@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
-from core.bitrix24.bitrix24 import create_portal
+from core.bitrix24.bitrix24 import create_portal, TaskB24
 
 logger = logging.getLogger(__name__)
 SEPARATOR = '*' * 40
@@ -42,6 +42,9 @@ def index(request):
     logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
     user_info = core_methods.get_current_user(request, auth_id, portal)
     logger.info(f'{NEW_STR}{user_info=}')
+
+    task = TaskB24(portal, task_id)
+    logger.info(f'{NEW_STR}{task.properties=}')
 
     context = {
         'title': title,
