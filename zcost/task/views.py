@@ -5,11 +5,12 @@ from django.core.exceptions import BadRequest
 import core.methods as core_methods
 
 from django.conf import settings as app_settings
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
 from core.bitrix24.bitrix24 import create_portal, TaskB24
+from settings.models import SettingsPortal
 
 logger = logging.getLogger(__name__)
 SEPARATOR = '*' * 40
@@ -39,6 +40,7 @@ def index(request):
         })
 
     portal = create_portal(member_id)
+    settings_portal = get_object_or_404(SettingsPortal, portal=portal)
     logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
     user_info = core_methods.get_current_user(request, auth_id, portal)
     logger.info(f'{NEW_STR}{user_info=}')
@@ -50,5 +52,27 @@ def index(request):
         'title': title,
         'title_app': title_app,
     }
+
+    if 'ufCrmTask' not in task.properties or not task.properties.get('ufCrmTask'):
+        # Задача не привязана к сделке
+        logger.info(f'{NEW_STR}Задача не привязана к сделке.')
+        logger.info(f'{SEPARATOR}')
+        context['error'] = 'Задача не привязана к сделке'
+        return render(request, template, context)
+    if settings_portal.cost_in_task_code not in task.properties:
+        # Код поля Себестоимость в задачах указан неверно или не существует
+        logger.info(f'{NEW_STR}Код поля "Себестоимость в задачах" указан неверно или не существует. '
+                    f'{settings_portal.cost_in_task_code=}.')
+        logger.info(f'{SEPARATOR}')
+        context['error'] = 'Код поля "Себестоимость в задачах" указан неверно или не существует.'
+        return render(request, template, context)
+    if task.properties.get(settings_portal.cost_in_task_code):
+        # Поле Себестоимость в задачах уже заполнено
+        logger.info(f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
+                    f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
+        logger.info(f'{SEPARATOR}')
+        context['error'] = (f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
+                            f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
+        return render(request, template, context)
 
     return render(request, template, context)

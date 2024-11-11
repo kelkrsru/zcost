@@ -5,9 +5,13 @@
 {% block content %}
   {% include 'includes/modals.html' %}
   {% load static %}
-
-
-
+  {% if error %}
+    <div class="row">
+      <div class="col-12">
+        <p>{{ error }}</p>
+      </div>
+    </div>
+  {% endif %}
 {% endblock %}
 {% block user_scripts %}
   <script>
