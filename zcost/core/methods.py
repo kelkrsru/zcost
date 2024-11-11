@@ -18,13 +18,13 @@ def check_request(request):
     return member_id
 
 
-def initial_check(request, entity_type='deal_id'):
+def initial_check(request, entity_type='deal_id', placement_id_code='ID'):
     """Метод начальной проверки на тип запроса."""
     auth_id = ''
 
     if request.method == 'POST':
         member_id: str = request.POST['member_id']
-        entity_id: int = int(json.loads(request.POST['PLACEMENT_OPTIONS'])['ID'])
+        entity_id: int = int(json.loads(request.POST['PLACEMENT_OPTIONS'])[placement_id_code])
         if 'AUTH_ID' in request.POST:
             auth_id: str = request.POST.get('AUTH_ID')
     elif request.method == 'GET':

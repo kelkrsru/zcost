@@ -1,9 +1,15 @@
 import logging
 
+from django.core.exceptions import BadRequest
+
+import core.methods as core_methods
+
 from django.conf import settings as app_settings
 from django.shortcuts import render
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
+
+from core.bitrix24.bitrix24 import create_portal
 
 logger = logging.getLogger(__name__)
 SEPARATOR = '*' * 40
@@ -20,6 +26,22 @@ def index(request):
 
     logger.info(f'{SEPARATOR}')
     logger.info(f'{NEW_STR}{request.method=}  {request.build_absolute_uri()}')
+
+    try:
+        member_id, task_id, auth_id = core_methods.initial_check(request, entity_type='task_id',
+                                                                 placement_id_code='taskId')
+        logger.debug(f'{NEW_STR}{member_id=}  {task_id=}  {auth_id=}')
+    except BadRequest:
+        logger.error(f'{NEW_STR}Неизвестный тип запроса {request.method=}')
+        return render(request, 'error.html', {
+            'error_name': 'QueryError',
+            'error_description': 'Неизвестный тип запроса'
+        })
+
+    portal = create_portal(member_id)
+    logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
+    user_info = core_methods.get_current_user(request, auth_id, portal)
+    logger.info(f'{NEW_STR}{user_info=}')
 
     context = {
         'title': title,
