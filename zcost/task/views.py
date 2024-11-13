@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from core.bitrix24.bitrix24 import create_portal, TaskB24
 from settings.models import SettingsPortal
+from task.forms import CostForm
 
 logger = logging.getLogger(__name__)
 SEPARATOR = '*' * 40
@@ -66,7 +67,7 @@ def index(request):
         logger.info(f'{SEPARATOR}')
         context['error'] = 'Код поля "Себестоимость в задачах" указан неверно или не существует.'
         return render(request, template, context)
-    if task.properties.get(settings_portal.cost_in_task_code):
+    if snake2camel(task.properties.get(settings_portal.cost_in_task_code)):
         # Поле Себестоимость в задачах уже заполнено
         logger.info(f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
                     f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
@@ -74,6 +75,9 @@ def index(request):
         context['error'] = (f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
                             f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
         return render(request, template, context)
+
+    form = CostForm(request.POST or None)
+    context['form'] = form
 
     return render(request, template, context)
 

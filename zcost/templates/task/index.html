@@ -5,13 +5,17 @@
 {% block content %}
   {% include 'includes/modals.html' %}
   {% load static %}
+  <div class="row">
   {% if error %}
-    <div class="row">
-      <div class="col-12">
-        <p>{{ error }}</p>
-      </div>
+    <div class="col-12">
+      <p>{{ error }}</p>
+    </div>
+  {% else %}
+    <div class="col-12">
+      {% include 'page_form.html' with btn_success_name='Отправить' %}
     </div>
   {% endif %}
+  </div>
 {% endblock %}
 {% block user_scripts %}
   <script>
