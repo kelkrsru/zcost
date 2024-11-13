@@ -67,7 +67,7 @@ def index(request):
         logger.info(f'{SEPARATOR}')
         context['error'] = 'Код поля "Себестоимость в задачах" указан неверно или не существует.'
         return render(request, template, context)
-    if snake2camel(task.properties.get(settings_portal.cost_in_task_code)):
+    if task.properties.get(snake2camel(settings_portal.cost_in_task_code)):
         # Поле Себестоимость в задачах уже заполнено
         logger.info(f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
                     f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
