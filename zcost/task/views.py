@@ -1,8 +1,7 @@
-import json
 import logging
 
 from django.core.exceptions import BadRequest
-from django.http import HttpResponse
+from django.urls import reverse_lazy
 
 import core.methods as core_methods
 
@@ -28,68 +27,65 @@ def index(request):
     title = 'Задачи'
     title_app = app_settings.TITLE_APP
 
-    context = {
-        'title': title,
-        'title_app': title_app,
-    }
+    logger.info(f'{SEPARATOR}')
+    logger.info(f'{NEW_STR}{request.method=}  {request.build_absolute_uri()}')
 
-    if request.method == 'POST':
-        if 'cost' in request.POST:
-            form = CostForm(request.POST)
-            if form.is_valid():
-                HttpResponse(200)
-        else:
-            logger.info(f'{SEPARATOR}')
-            logger.info(f'{NEW_STR}{request.method=}  {request.build_absolute_uri()}')
-
-            member_id = request.POST.get('member_id')
-            task_id = int(json.loads(request.POST.get('PLACEMENT_OPTIONS')).get('taskId'))
-            auth_id = request.POST.get('AUTH_ID') if 'AUTH_ID' in request.POST else None
-
-            portal = create_portal(member_id)
-            settings_portal = get_object_or_404(SettingsPortal, portal=portal)
-            logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
-            user_info = core_methods.get_current_user(request, auth_id, portal)
-            logger.info(f'{NEW_STR}{user_info=}')
-
-            task = TaskB24(portal, task_id)
-            logger.info(f'{NEW_STR}{task.properties=}')
-
-            if 'ufCrmTask' not in task.properties or not task.properties.get('ufCrmTask'):
-                # Задача не привязана к сделке
-                logger.info(f'{NEW_STR}Задача не привязана к сделке.')
-                logger.info(f'{SEPARATOR}')
-                context['error'] = 'Задача не привязана к сделке'
-                return render(request, template, context)
-            if snake2camel(settings_portal.cost_in_task_code) not in task.properties:
-                # Код поля Себестоимость в задачах указан неверно или не существует
-                logger.info(f'{NEW_STR}Код поля "Себестоимость в задачах" указан неверно или не существует. '
-                            f'{settings_portal.cost_in_task_code=}.')
-                logger.info(f'{SEPARATOR}')
-                context['error'] = 'Код поля "Себестоимость в задачах" указан неверно или не существует.'
-                return render(request, template, context)
-            if task.properties.get(snake2camel(settings_portal.cost_in_task_code)):
-                # Поле Себестоимость в задачах уже заполнено
-                logger.info(f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
-                            f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
-                logger.info(f'{SEPARATOR}')
-                context['error'] = (f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
-                                    f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
-                return render(request, template, context)
-
-            form = CostForm()
-            context['form'] = form
-
-            return render(request, template, context)
-
-    else:
-        logger.info(f'{SEPARATOR}')
-        logger.info(f'{NEW_STR}{request.method=}  {request.build_absolute_uri()}')
+    try:
+        member_id, task_id, auth_id = core_methods.initial_check(request, entity_type='task_id',
+                                                                 placement_id_code='taskId')
+        logger.debug(f'{NEW_STR}{member_id=}  {task_id=}  {auth_id=}')
+    except BadRequest:
         logger.error(f'{NEW_STR}Неизвестный тип запроса {request.method=}')
         return render(request, 'error.html', {
             'error_name': 'QueryError',
             'error_description': 'Неизвестный тип запроса'
         })
+
+    portal = create_portal(member_id)
+    settings_portal = get_object_or_404(SettingsPortal, portal=portal)
+    logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
+    user_info = core_methods.get_current_user(request, auth_id, portal)
+    logger.info(f'{NEW_STR}{user_info=}')
+
+    task = TaskB24(portal, task_id)
+    logger.info(f'{NEW_STR}{task.properties=}')
+
+    context = {
+        'title': title,
+        'title_app': title_app,
+    }
+
+    if 'ufCrmTask' not in task.properties or not task.properties.get('ufCrmTask'):
+        # Задача не привязана к сделке
+        logger.info(f'{NEW_STR}Задача не привязана к сделке.')
+        logger.info(f'{SEPARATOR}')
+        context['error'] = 'Задача не привязана к сделке'
+        return render(request, template, context)
+    if snake2camel(settings_portal.cost_in_task_code) not in task.properties:
+        # Код поля Себестоимость в задачах указан неверно или не существует
+        logger.info(f'{NEW_STR}Код поля "Себестоимость в задачах" указан неверно или не существует. '
+                    f'{settings_portal.cost_in_task_code=}.')
+        logger.info(f'{SEPARATOR}')
+        context['error'] = 'Код поля "Себестоимость в задачах" указан неверно или не существует.'
+        return render(request, template, context)
+    if task.properties.get(snake2camel(settings_portal.cost_in_task_code)):
+        # Поле Себестоимость в задачах уже заполнено
+        logger.info(f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
+                    f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
+        logger.info(f'{SEPARATOR}')
+        context['error'] = (f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
+                            f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
+        return render(request, template, context)
+
+    context['form'] = CostForm()
+    context['action_url'] = reverse_lazy('task:send-cost')
+
+    return render(request, template, context)
+
+
+def send_cost(request):
+    """Метод для обработки формы."""
+    pass
 
 
 def snake2camel(snake_str):
