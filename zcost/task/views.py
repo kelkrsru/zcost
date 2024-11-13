@@ -83,6 +83,7 @@ def index(request):
     return render(request, template, context)
 
 
+@csrf_exempt
 def send_cost(request):
     """Метод для обработки формы."""
     pass
