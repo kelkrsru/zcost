@@ -92,6 +92,7 @@ def send_cost(request):
     logger.info(f'')
     form = CostForm(request.POST)
     if form.is_valid():
+        logger.debug(f'{NEW_STR}{form.cleaned_data=}')
         task_id = form.cleaned_data.get('task_id')
         member_id = form.cleaned_data.get('member_id')
         portal = create_portal(member_id)
