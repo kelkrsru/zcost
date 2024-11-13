@@ -1,6 +1,7 @@
 import logging
 
 from django.core.exceptions import BadRequest
+from django.http import HttpResponse
 from django.urls import reverse_lazy
 
 import core.methods as core_methods
@@ -86,7 +87,9 @@ def index(request):
 @csrf_exempt
 def send_cost(request):
     """Метод для обработки формы."""
-    pass
+    form = CostForm(request.POST)
+    if form.is_valid():
+        HttpResponse(200)
 
 
 def snake2camel(snake_str):
