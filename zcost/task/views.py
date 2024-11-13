@@ -92,7 +92,14 @@ def send_cost(request):
     logger.info(f'')
     form = CostForm(request.POST)
     if form.is_valid():
-        return HttpResponse(200)
+        task_id = form.cleaned_data.get('task_id')
+        member_id = form.cleaned_data.get('member_id')
+        portal = create_portal(member_id)
+        settings_portal = get_object_or_404(SettingsPortal, portal=portal)
+        logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
+
+        task = TaskB24(portal, task_id)
+        return HttpResponse(task)
     return HttpResponse(404)
 
 
