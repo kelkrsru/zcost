@@ -54,6 +54,8 @@ def index(request):
     context = {
         'title': title,
         'title_app': title_app,
+        'member_id': member_id,
+        'task_id': task_id,
     }
 
     if 'ufCrmTask' not in task.properties or not task.properties.get('ufCrmTask'):
@@ -87,6 +89,7 @@ def index(request):
 @csrf_exempt
 def send_cost(request):
     """Метод для обработки формы."""
+    logger.info(f'')
     form = CostForm(request.POST)
     if form.is_valid():
         return HttpResponse(200)

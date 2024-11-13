@@ -8,7 +8,7 @@
         </div>
       {% endfor %}
     {% endif %}
-    <form method="post" action="{{ action_url }}">
+    <form method="post" action="{{ f_action_url }}">
       <div class="card-body">
         {% csrf_token %}
         {% for field in form %}
@@ -58,12 +58,14 @@
             {% endif %}
           </div>
         {% endfor %}
+        <input type="hidden" name="member_id" value="{{ f_member_id }}">
+        <input type="hidden" name="task_id" value="{{ f_task_id }}">
       </div>
 
       {% block card_footer %}
         <div class="card-footer">
           <div class="col d-flex align-items-end justify-content-end">
-            <button type="submit" class="btn btn-success">{{ btn_success_name }}</button>
+            <button type="submit" class="btn btn-success">{{ f_btn_success_name }}</button>
           </div>
         </div>
       {% endblock %}
