@@ -89,8 +89,8 @@ def send_cost(request):
     """Метод для обработки формы."""
     form = CostForm(request.POST)
     if form.is_valid():
-        HttpResponse(404)
-    HttpResponse(200)
+        return HttpResponse(200)
+    return HttpResponse(404)
 
 
 def snake2camel(snake_str):
