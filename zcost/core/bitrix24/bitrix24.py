@@ -319,7 +319,7 @@ class TaskB24(ObjB24):
     def update(self, fields):
         """Обновить задачу."""
         return self._check_error(self.bx24.call(
-            'tasks.task.update', {'taskid': self.id, 'fields': fields}
+            'tasks.task.update', {'taskId': self.id, 'fields': fields}
         ))
 
 

@@ -8,4 +8,4 @@ class SettingsPortalForm(forms.ModelForm):
 
     class Meta:
         model = SettingsPortal
-        fields = ()
+        fields = ('cost_in_task_code', 'cost_in_deal_code', 'ids_tasks_in_deal_code', 'links_tasks_in_deal_code')

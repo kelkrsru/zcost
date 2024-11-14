@@ -1,3 +1,4 @@
+import decimal
 import logging
 
 from django.core.exceptions import BadRequest
@@ -5,13 +6,14 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 
 import core.methods as core_methods
+import task.methods as task_methods
 
 from django.conf import settings as app_settings
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
-from core.bitrix24.bitrix24 import create_portal, TaskB24
+from core.bitrix24.bitrix24 import create_portal, TaskB24, DealB24
 from settings.models import SettingsPortal
 from task.forms import CostForm
 
@@ -58,26 +60,8 @@ def index(request):
         'task_id': task_id,
     }
 
-    if 'ufCrmTask' not in task.properties or not task.properties.get('ufCrmTask'):
-        # Задача не привязана к сделке
-        logger.info(f'{NEW_STR}Задача не привязана к сделке.')
+    if not task_methods.check_fields(task, context, settings_portal, logger):
         logger.info(f'{SEPARATOR}')
-        context['error'] = 'Задача не привязана к сделке'
-        return render(request, template, context)
-    if snake2camel(settings_portal.cost_in_task_code) not in task.properties:
-        # Код поля Себестоимость в задачах указан неверно или не существует
-        logger.info(f'{NEW_STR}Код поля "Себестоимость в задачах" указан неверно или не существует. '
-                    f'{settings_portal.cost_in_task_code=}.')
-        logger.info(f'{SEPARATOR}')
-        context['error'] = 'Код поля "Себестоимость в задачах" указан неверно или не существует.'
-        return render(request, template, context)
-    if task.properties.get(snake2camel(settings_portal.cost_in_task_code)):
-        # Поле Себестоимость в задачах уже заполнено
-        logger.info(f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
-                    f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
-        logger.info(f'{SEPARATOR}')
-        context['error'] = (f'{NEW_STR}Поле "Себестоимость в задачах" уже заполнено. '
-                            f'{task.properties.get(settings_portal.cost_in_task_code)=}.')
         return render(request, template, context)
 
     context['form'] = CostForm()
@@ -89,24 +73,44 @@ def index(request):
 @csrf_exempt
 def send_cost(request):
     """Метод для обработки формы."""
-    logger.info(f'')
+    logger.info(f'{NEW_STR}Запущена метод отправки себестоимости из задач')
     form = CostForm(request.POST)
     if form.is_valid():
-        logger.debug(f'{NEW_STR}{form.cleaned_data=}')
         task_id = int(request.POST.get('task_id'))
         member_id = request.POST.get('member_id')
+        logger.info(f'{NEW_STR}Переданные значения прошли валидацию')
+        logger.info(f'{NEW_STR}{form.cleaned_data=}  {task_id=}  {member_id=}')
+
         portal = create_portal(member_id)
         settings_portal = get_object_or_404(SettingsPortal, portal=portal)
         logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
 
         task = TaskB24(portal, task_id)
-        fields = {settings_portal.cost_in_task_code: form.cleaned_data.get('cost')}
-        task.update(fields)
-        return HttpResponse(task.properties)
+        logger.info(f'{NEW_STR}Получаем задачу по {task_id=}')
+        logger.debug(f'{NEW_STR}{task.properties=}')
+        deal_id = int(task.properties.get('ufCrmTask')[0].split('_')[1])
+        deal = DealB24(portal, deal_id)
+        logger.info(f'{NEW_STR}Получаем привязанную к задаче сделку по {deal_id=}')
+        logger.debug(f'{NEW_STR}{deal.properties=}')
+
+        fields = {settings_portal.cost_in_task_code: str(form.cleaned_data.get('cost'))}
+        logger.info(f'{NEW_STR}Обновляем поля задачи {fields=}')
+        result = task.update(fields)
+        logger.info(f'{NEW_STR}Результат обновления полей задачи {result=}')
+
+        cost_in_deal, ids_tasks_in_deal, links_tasks_in_deal = task_methods.check_fields_send_deal(task, deal, form,
+                                                                                                   portal,
+                                                                                                   settings_portal,
+                                                                                                   logger)
+
+        fields = {settings_portal.cost_in_deal_code: str(cost_in_deal),
+                  settings_portal.ids_tasks_in_deal_code: ids_tasks_in_deal,
+                  settings_portal.links_tasks_in_deal_code: links_tasks_in_deal}
+        logger.info(f'{NEW_STR}Обновляем поля сделки {fields=}')
+        result = deal.update(fields)
+        logger.info(f'{NEW_STR}Результат обновления полей сделки {result=}')
+        return HttpResponse('ok')
     return HttpResponse(404)
 
 
-def snake2camel(snake_str):
-    """Метод преобразования названия поля из snake case в camel case."""
-    first, *others = snake_str.split('_')
-    return ''.join([first.lower(), *map(str.title, others)])
+
