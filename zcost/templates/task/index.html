@@ -3,7 +3,6 @@
 
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-  {% include 'includes/modals.html' %}
   {% load static %}
   <div class="row">
   {% if error %}
@@ -12,7 +11,7 @@
     </div>
   {% else %}
     <div class="col-12">
-      {% include 'page_form.html' with f_btn_success_name='Отправить' f_member_id=member_id f_task_id=task_id %}
+      {% include 'task/form.html' with f_btn_success_name='Отправить' f_member_id=member_id f_task_id=task_id f_action_url=action_url%}
     </div>
   {% endif %}
   </div>

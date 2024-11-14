@@ -93,14 +93,16 @@ def send_cost(request):
     form = CostForm(request.POST)
     if form.is_valid():
         logger.debug(f'{NEW_STR}{form.cleaned_data=}')
-        task_id = form.cleaned_data.get('task_id')
-        member_id = form.cleaned_data.get('member_id')
+        task_id = int(request.POST.get('task_id'))
+        member_id = request.POST.get('member_id')
         portal = create_portal(member_id)
         settings_portal = get_object_or_404(SettingsPortal, portal=portal)
         logger.debug(f'{NEW_STR}{portal.id=}  {portal.name=}')
 
         task = TaskB24(portal, task_id)
-        return HttpResponse(task)
+        fields = {settings_portal.cost_in_task_code: form.cleaned_data.get('cost')}
+        task.update(fields)
+        return HttpResponse(task.properties)
     return HttpResponse(404)
 
 

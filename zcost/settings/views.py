@@ -29,7 +29,7 @@ def index(request):
             'error_description': 'Неизвестный тип запроса'
         })
     portal = create_portal(member_id)
-    settings_portal = SettingsPortal.objects.get_or_create(portal=portal)
+    created, settings_portal = SettingsPortal.objects.get_or_create(portal=portal)
     user_info = core_methods.get_current_user(request, auth_id, portal)
 
     if 'AUTH_ID' in request.POST:

@@ -316,6 +316,12 @@ class TaskB24(ObjB24):
         """Создать задачу в Битрикс24"""
         return self.bx24.call('tasks.task.add', {'fields': fields})
 
+    def update(self, fields):
+        """Обновить задачу."""
+        return self._check_error(self.bx24.call(
+            'tasks.task.update', {'taskid': self.id, 'fields': fields}
+        ))
+
 
 class TemplateDocB24(ObjB24):
     """Класс Шаблоны и Документы."""
