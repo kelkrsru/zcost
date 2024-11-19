@@ -73,6 +73,15 @@ def index(request):
 @csrf_exempt
 def send_cost(request):
     """Метод для обработки формы."""
+    template = 'task/form_success.html'
+    title = 'Задачи'
+    title_app = app_settings.TITLE_APP
+
+    context = {
+        'title': title,
+        'title_app': title_app,
+    }
+
     logger.info(f'{NEW_STR}Запущена метод отправки себестоимости из задач')
     form = CostForm(request.POST)
     if form.is_valid():
@@ -109,7 +118,9 @@ def send_cost(request):
         logger.info(f'{NEW_STR}Обновляем поля сделки {fields=}')
         result = deal.update(fields)
         logger.info(f'{NEW_STR}Результат обновления полей сделки {result=}')
-        return HttpResponse('ok')
+        context['task_id'] = task_id
+        context['deal_id'] = deal_id
+        return render(request, template, context)
     return HttpResponse(404)
 
 
